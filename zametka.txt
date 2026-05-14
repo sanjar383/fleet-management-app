@@ -1,0 +1,16 @@
+# Avtopark Loyihasi - Eslatma (Zametka)
+
+## Bugun qilingan ishlar (Oxirgi o'zgarishlar):
+1. **Qatnov formasi:** Chiqish va Kirish sanalari yonma-yon qilindi. Ish kuni va soati faqat butun son qabul qiladigan qilindi.
+2. **Uch bosqichli aqlli mashina tanlash:** 
+   - Transport vositasi turi (Yengil, Yuk, Maxsus...)
+   - Mashina markasi (Cobalt, Kamaz...)
+   - Davlat yoki inventar raqami
+3. Bularning bari bir-biriga zanjirdek bog'landi (filtrlash).
+4. **Baza tarjimasi:** Barcha ruscha mashina turlari o'zbek tiliga (Yengil avtomobil, Samosval va hkz) to'liq tarjima qilindi.
+5. **Google Sheets:** Yuqoridagi hamma ma'lumotlar Google Excel jadvaliga 3 xil alohida ustunga borib tushadigan qilindi.
+
+## Ertaga qilinishi mumkin bo'lgan ishlar:
+- Formalarni tekshirish (test qatnov kiritish).
+- Agar kerak bo'lsa hisobotlar qismini qo'shish.
+- Boshqa qo'shimcha funksiyalar...

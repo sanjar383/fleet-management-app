@@ -1,0 +1,80 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  username  String   @unique
+  password  String
+  role      String   @default("DISPATCHER") // ADMIN yoki DISPATCHER
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  trips     Trip[]   // Dispetcher kiritgan qatnovlar
+}
+
+model Vehicle {
+  id        String   @id @default(cuid())
+  brand     String   // Masalan: Lada Niva
+  plate     String   @unique // Davlat raqami
+  type      String   // yengil, yuk, avtokran
+  fuelType  String   // Benzin, Dizel, Propan, Metan
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  trips     Trip[]
+}
+
+model Norm {
+  id         String   @id @default(cuid())
+  type       String   // yengil, yuk, avtokran
+  location   String   // ish joyi yoki marshrut (masalan: 500-1500m)
+  season     String   // yoz, qish
+  fuelPer100 Float    // 100km ga qancha yoqilg'i (litr)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Driver {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model Trip {
+  id          String   @id @default(cuid())
+  date        DateTime @default(now())
+  departureDate DateTime? // Chiqish sanasi
+  returnDate    DateTime? // Kirish sanasi
+  workDays      Float?    // Ish kuni
+  workHours     Float?    // Ish soati
+  organization  String?   // Tashkilot / Ekspeditsiya
+  division    String?  // Tarkibiy bo'linma
+  vehicleType String?  // Transport vositasi turi
+  
+  driver      String
+  origin      String
+  destination String
+  startKm     Float
+  endKm       Float
+  distance    Float
+  fuelFilled  Float
+  fuelNorm    Float    // Normaga ko'ra sarf
+  fuelActual  Float    // Amaldagi sarf
+  
+  vehicleId   String
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id])
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
