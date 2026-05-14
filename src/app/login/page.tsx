@@ -8,6 +8,7 @@ import styles from "./login.module.css";
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
 
@@ -48,14 +49,24 @@ export default function LoginPage() {
           </div>
           <div className={styles.formGroup}>
             <label className={styles.label}>Parol</label>
-            <input
-              type="password"
-              className={styles.input}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              placeholder="••••••••"
-            />
+            <div className={styles.passwordWrapper}>
+              <input
+                type={showPassword ? "text" : "password"}
+                className={styles.input}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                className={styles.toggleBtn}
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label="Parol ko'rinishini o'zgartirish"
+              >
+                {showPassword ? "🙈" : "👁"}
+              </button>
+            </div>
           </div>
 
           {error && <p style={{ color: "#fc8181", fontSize: "0.875rem", marginBottom: "1rem" }}>{error}</p>}

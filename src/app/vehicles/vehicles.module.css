@@ -1,0 +1,96 @@
+.container {
+  min-height: 100vh;
+  padding: 2.5rem;
+  background: #0f111a;
+  color: #e2e8f0;
+  font-family: 'Inter', sans-serif;
+}
+
+.toolbar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.03);
+  color: #e2e8f0;
+}
+
+.addButton, .backButton {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.addButton {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.backButton {
+  background: rgba(255,255,255,0.05);
+  color: #e2e8f0;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th, .table td {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.table th {
+  color: #a0aec0;
+  text-align: left;
+}
+
+.table tr:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.bold {
+  font-weight: bold;
+  color: #fff;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.editLink {
+  background: rgba(102,126,234,0.1);
+  color: #667eea;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.deleteForm {
+  display: inline;
+}
+
+.empty {
+  text-align: center;
+  color: #718096;
+  padding: 2rem;
+}
