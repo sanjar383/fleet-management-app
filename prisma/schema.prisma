@@ -19,14 +19,15 @@ model User {
 }
 
 model Vehicle {
-  id        String   @id @default(cuid())
-  brand     String   // Masalan: Lada Niva
-  plate     String   @unique // Davlat raqami
-  type      String   // yengil, yuk, avtokran
-  fuelType  String   // Benzin, Dizel, Propan, Metan
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  trips     Trip[]
+  id              String   @id @default(cuid())
+  brand           String   // Masalan: Lada Niva
+  plate           String   @unique // Davlat raqami
+  type            String   // yengil, yuk, avtokran
+  fuelType        String   // Benzin, Dizel, Propan, Metan
+  manufactureYear Int?     // Ishlab chiqarilgan yili
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  trips           Trip[]
 }
 
 model Norm {
@@ -49,32 +50,53 @@ model Driver {
 
 
 model Trip {
-  id          String   @id @default(cuid())
-  date        DateTime @default(now())
+  id            String   @id @default(cuid())
+  date          DateTime @default(now())
   departureDate DateTime? // Chiqish sanasi
   returnDate    DateTime? // Kirish sanasi
   workDays      Float?    // Ish kuni
   workHours     Float?    // Ish soati
   organization  String?   // Tashkilot / Ekspeditsiya
-  division    String?  // Tarkibiy bo'linma
-  vehicleType String?  // Transport vositasi turi
+  division      String?   // Tarkibiy bo'linma
+  vehicleType   String?   // Transport vositasi turi
   
-  driver      String
-  origin      String
-  destination String
-  startKm     Float
-  endKm       Float
-  distance    Float
-  fuelFilled  Float
-  fuelNorm    Float    // Normaga ko'ra sarf
-  fuelActual  Float    // Amaldagi sarf
+  // Yangi murakkab maydonlar
+  waybillNumber String?   // Yo'l varaqasi raqami
+  gpsStatus     String?   // GPS holati
+  acStatus      String?   // Konditsioner/Kompressor holati
+  regionNorm    String?   // Hudud (normativ)
+  regionActual  String?   // Hudud (amalda)
   
-  vehicleId   String
-  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id])
+  // Masofa koeffitsientlari (km larda)
+  m500_1500     Float? @default(0)
+  m1501_2000    Float? @default(0)
+  m2001_3000    Float? @default(0)
+  m3001_plus    Float? @default(0)
+  sandGravel    Float? @default(0) // Qum tosh yo'lda
+  seasonCoeff   Float? @default(0) // Mavsum koeffitsienti
   
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  driver        String
+  origin        String
+  destination   String
+  startKm       Float
+  endKm         Float
+  distance      Float
+  fuelFilled    Float
+  fuelNorm      Float    // Normaga ko'ra sarf
+  fuelActual    Float    // Amaldagi sarf
   
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // Yoqilg'i qoldiqlari
+  fuelStart     Float? @default(0) // Boshidagi qoldiq
+  fuelEnd       Float? @default(0) // Oxiridagi qoldiq
+  
+  sheetsRow     Int?               // Sheets dagi qator raqami
+  
+  vehicleId     String
+  vehicle       Vehicle  @relation(fields: [vehicleId], references: [id])
+  
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

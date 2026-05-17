@@ -9,97 +9,125 @@ const prisma = new PrismaClient();
 
 export async function createTrip(formData: FormData) {
   const session = await getServerSession(authOptions);
-  if (!session || !session.user) {
-    throw new Error("Unauthorized");
-  }
+  const userId = (session?.user as any)?.id;
+  if (!userId) throw new Error("Siz tizimga kirmagansiz.");
 
-  const driver = formData.get("driver") as string;
-  const vehicleInput = formData.get("vehicleId") as string;
-  const departureDateStr = formData.get("departureDate") as string;
-  const returnDateStr = formData.get("returnDate") as string;
-  const workDays = parseFloat(formData.get("workDays") as string) || 0;
-  const workHours = parseFloat(formData.get("workHours") as string) || 0;
-  const vehicleType = formData.get("vehicleType") as string;
-  const organization = formData.get("organization") as string;
-  const division = formData.get("division") as string;
-  const route = formData.get("route") as string;
-  const startKm = parseFloat(formData.get("startKm") as string);
-  const endKm = parseFloat(formData.get("endKm") as string);
-  const fuelFilled = parseFloat(formData.get("fuelFilled") as string);
+  const getStr = (key: string) => (formData.get(key) as string) || "";
+  const getNum = (key: string) => {
+    const val = parseFloat(formData.get(key) as string);
+    return isNaN(val) ? 0 : val;
+  };
 
-  const distance = endKm - startKm;
+  const vehicleId = getStr("vehicleId"); // ENDI ID KELYAPTI!
+  const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
+  if (!vehicle) throw new Error(`Mashina topilmadi (ID: ${vehicleId})`);
 
-  // Extract plate from "Cobalt (01A123AA)"
-  const plateMatch = vehicleInput.match(/\(([^)]+)\)/);
-  const vehiclePlate = plateMatch ? plateMatch[1].trim() : vehicleInput.trim();
-
-  // Get vehicle
-  const vehicle = await prisma.vehicle.findUnique({ where: { plate: vehiclePlate } });
-  if (!vehicle) throw new Error("Mashina topilmadi!");
-
-  const vehicleId = vehicle.id;
-
-  // Get norm
-  const norm = await prisma.norm.findFirst({
-    where: { type: vehicle.brand }
-  });
-
-  const fuelPer100 = norm?.fuelPer100 || 0;
-  const fuelNorm = distance * (fuelPer100 / 100);
-
-  // Here fuelActual can be calculated later based on tank rest, but we just save filled
-  const fuelActual = fuelFilled; 
-  
-  const departureDate = departureDateStr ? new Date(departureDateStr) : new Date();
-  const returnDate = returnDateStr ? new Date(returnDateStr) : null;
+  const departureDate = getStr("departureDate") ? new Date(getStr("departureDate")) : new Date();
+  const returnDate = getStr("returnDate") ? new Date(getStr("returnDate")) : null;
 
   const trip = await prisma.trip.create({
     data: {
-      driver,
-      vehicleId,
-      userId: session.user.id,
+      driver: getStr("driver"),
+      origin: getStr("route"),
+      destination: getStr("route"),
+      startKm: getNum("startKm"),
+      endKm: getNum("endKm"),
+      distance: Math.max(0, getNum("endKm") - getNum("startKm")),
+      fuelFilled: getNum("fuelFilled"),
+      fuelNorm: 0,
+      fuelActual: 0,
+      fuelStart: getNum("fuelStart"),
+      fuelEnd: 0,
+      vehicleId: vehicle.id,
+      userId,
       departureDate,
       returnDate,
-      workDays,
-      workHours,
-      organization,
-      division,
-      vehicleType,
-      origin: route, // fallback for schema
-      destination: "", // fallback for schema
-      startKm,
-      endKm,
-      distance,
-      fuelFilled,
-      fuelNorm,
-      fuelActual,
+      organization: getStr("organization"),
+      division: getStr("division"),
+      vehicleType: vehicle.type,
+      waybillNumber: getStr("waybillNumber"),
+      gpsStatus: getStr("gpsStatus"),
+      acStatus: getStr("acStatus"),
+      regionNorm: getStr("regionNorm"),
+      m500_1500: getNum("m500_1500"),
+      m1501_2000: getNum("m1501_2000"),
+      m2001_3000: getNum("m2001_3000"),
+      m3001_plus: getNum("m3001_plus"),
+      sandGravel: getNum("sandGravel"),
+      seasonCoeff: getNum("seasonCoeff") || 1
     }
   });
 
-  // 5. Google Sheetsga yozish!
   try {
-    const { appendTripToSheet } = await import("@/lib/sheets");
-    await appendTripToSheet({
-      id: trip.id,
-      date: departureDate,
-      returnDate: returnDate,
-      workDays: trip.workDays,
-      workHours: trip.workHours,
-      organization: trip.organization,
-      division: trip.division,
-      driver: trip.driver,
-      vehiclePlate: vehicle.plate,
-      vehicleBrand: vehicle.brand,
-      route: route,
-      startKm: trip.startKm,
-      endKm: trip.endKm,
-      distance: trip.distance,
-      fuelType: vehicle.fuelType,
-      fuelUsed: trip.fuelFilled
-    });
+    const { appendTripToIshJadvali } = await import("@/lib/sheets");
+    const rowNumber = await appendTripToIshJadvali(trip, vehicle);
+    if (rowNumber) {
+      await (prisma.trip as any).update({
+        where: { id: trip.id },
+        data: { sheetsRow: rowNumber }
+      });
+    }
   } catch (e) {
-    console.error("Sheets sync xatosi", e);
+    console.error("Sheets sync error:", e);
   }
 
+  redirect("/dashboard");
+}
+
+export async function updateTrip(tripId: string, formData: FormData) {
+  // Tahrirlash logikasi xuddi shunday
+  const getStr = (key: string) => (formData.get(key) as string) || "";
+  const getNum = (key: string) => parseFloat(formData.get(key) as string) || 0;
+
+  const trip = await prisma.trip.update({
+    where: { id: tripId },
+    data: {
+      driver: getStr("driver"),
+      origin: getStr("route"),
+      startKm: getNum("startKm"),
+      endKm: getNum("endKm"),
+      fuelStart: getNum("fuelStart"),
+      fuelFilled: getNum("fuelFilled"),
+      departureDate: new Date(getStr("departureDate")),
+      returnDate: getStr("returnDate") ? new Date(getStr("returnDate")) : null,
+      waybillNumber: getStr("waybillNumber"),
+      gpsStatus: getStr("gpsStatus"),
+      acStatus: getStr("acStatus"),
+      regionNorm: getStr("regionNorm"),
+      m500_1500: getNum("m500_1500"),
+      m1501_2000: getNum("m1501_2000"),
+      seasonCoeff: getNum("seasonCoeff"),
+    }
+  });
+
+  if ((trip as any).sheetsRow) {
+    try {
+      const { updateTripInIshJadvali } = await import("@/lib/sheets");
+      const vehicle = await prisma.vehicle.findUnique({ where: { id: trip.vehicleId } });
+      await updateTripInIshJadvali((trip as any).sheetsRow, trip, vehicle);
+    } catch (e) {
+      console.error("Sheets update error:", e);
+    }
+  }
+  redirect("/dashboard");
+}
+
+export async function deleteTrip(tripId: string) {
+  const trip = await prisma.trip.findUnique({ where: { id: tripId } });
+  if (!trip) throw new Error("Qatnov topilmadi.");
+  const rowNumber = (trip as any).sheetsRow;
+  await prisma.trip.delete({ where: { id: tripId } });
+  if (rowNumber) {
+    try {
+      const { deleteTripFromIshJadvali } = await import("@/lib/sheets");
+      await deleteTripFromIshJadvali(rowNumber);
+      await (prisma.trip as any).updateMany({
+        where: { sheetsRow: { gt: rowNumber } },
+        data: { sheetsRow: { decrement: 1 } }
+      });
+    } catch (e) {
+      console.error("Sheets delete error:", e);
+    }
+  }
   redirect("/dashboard");
 }

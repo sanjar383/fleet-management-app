@@ -66,7 +66,7 @@ export default function VehicleList({ vehicles }: Props) {
                   <Link href={`/vehicles/${v.id}/edit`} className={styles.editLink}>
                     Tahrirlash
                   </Link>
-                  <form action={deleteVehicle} method="post" className={styles.deleteForm}>
+                  <form action={deleteVehicle} className={styles.deleteForm}>
                     <input type="hidden" name="id" value={v.id} />
                     <DeleteButton message="Haqiqatan ham o'chirmoqchimisiz? Mashinaga bog'langan yo'l varaqalari xato berishi mumkin!" />
                   </form>

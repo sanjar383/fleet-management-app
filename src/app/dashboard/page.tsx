@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import styles from "./dashboard.module.css";
+import DeleteTripButton from "../trips/new/DeleteTripButton";
 
 const prisma = new PrismaClient();
 
@@ -14,9 +15,17 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const vehiclesCount = await prisma.vehicle.count();
-  const tripsCount = await prisma.trip.count();
-  const usersCount = await prisma.user.count();
+  // Ma'lumotlarni parallel olish
+  const [vehiclesCount, tripsCount, usersCount, recentTrips] = await Promise.all([
+    prisma.vehicle.count(),
+    prisma.trip.count(),
+    prisma.user.count(),
+    prisma.trip.findMany({
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: { vehicle: true }
+    })
+  ]);
 
   return (
     <div className={styles.container}>
@@ -29,15 +38,15 @@ export default async function DashboardPage() {
 
       <div className={styles.statsGrid}>
         <div className={styles.statCard}>
-          <div className={styles.statTitle}>Jami Mashinalar</div>
+          <div className={styles.statTitle}>🚗 Jami Mashinalar</div>
           <div className={styles.statValue}>{vehiclesCount}</div>
         </div>
         <div className={styles.statCard}>
-          <div className={styles.statTitle}>Jami Qatnovlar</div>
+          <div className={styles.statTitle}>🛣️ Jami Qatnovlar</div>
           <div className={styles.statValue}>{tripsCount}</div>
         </div>
         <div className={styles.statCard}>
-          <div className={styles.statTitle}>Foydalanuvchilar</div>
+          <div className={styles.statTitle}>👥 Foydalanuvchilar</div>
           <div className={styles.statValue}>{usersCount}</div>
         </div>
       </div>
@@ -46,7 +55,7 @@ export default async function DashboardPage() {
         <h2 className={styles.menuTitle}>Tezkor menyu</h2>
         <div className={styles.btnGroup}>
           <Link href="/trips/new" className={`${styles.actionBtn} ${styles.primaryBtn}`}>
-            + Yangi qatnov qo'shish
+            <span>+</span> Yangi qatnov qo'shish
           </Link>
           <Link href="/vehicles" className={`${styles.actionBtn} ${styles.secondaryBtn}`}>
             Mashinalar bazasi
@@ -60,29 +69,55 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div style={{ marginTop: "3rem", background: "rgba(255,255,255,0.03)", borderRadius: "16px", padding: "1.5rem", border: "1px solid rgba(255,255,255,0.05)" }}>
+      <div className={styles.tableSection}>
         <h2 className={styles.menuTitle}>Oxirgi Qatnovlar</h2>
         
-        {tripsCount === 0 ? (
-          <p style={{ color: "#718096" }}>Hali hech qanday qatnov kiritilmagan.</p>
+        {recentTrips.length === 0 ? (
+          <p style={{ color: "#718096", padding: "1rem" }}>Hali hech qanday qatnov kiritilmagan.</p>
         ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-            <thead>
-              <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-                <th style={{ padding: "1rem", color: "#a0aec0" }}>Sana</th>
-                <th style={{ padding: "1rem", color: "#a0aec0" }}>Haydovchi</th>
-                <th style={{ padding: "1rem", color: "#a0aec0" }}>Yo'nalish</th>
-                <th style={{ padding: "1rem", color: "#a0aec0" }}>Masofa</th>
-                <th style={{ padding: "1rem", color: "#a0aec0" }}>Norma sarf</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Bu yerda keyinchalik oxirgi 5 ta qatnovni chiqarib qo'yish mumkin */}
-              <tr>
-                <td colSpan={5} style={{ padding: "1rem", color: "#718096" }}>Jami {tripsCount} ta qatnov bazada saqlanmoqda. (Tez kunda shu yerda to'liq jadval chiqadi)</td>
-              </tr>
-            </tbody>
-          </table>
+          <div style={{ overflowX: "auto" }}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Sana</th>
+                  <th>Mashina</th>
+                  <th>Haydovchi</th>
+                  <th>Tashkilot / Bo'linma</th>
+                  <th>Yo'nalish</th>
+                  <th>Ish k/s</th>
+                  <th>Masofa</th>
+                  <th>Sarf (L)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentTrips.map((trip) => (
+                  <tr key={trip.id}>
+                    <td>{new Date(trip.departureDate || trip.createdAt).toLocaleDateString("uz-UZ")}</td>
+                    <td>
+                      <span className={styles.plateBadge}>{trip.vehicle.plate}</span>
+                    </td>
+                    <td>{trip.driver}</td>
+                    <td>
+                      <div style={{ fontSize: "0.85rem" }}>{trip.organization || "—"}</div>
+                      <div style={{ fontSize: "0.75rem", color: "#94a3b8" }}>{trip.division || "—"}</div>
+                    </td>
+                    <td>{trip.origin}</td>
+                    <td>
+                      <span title="Ish kunlari">{trip.workDays} k</span> / <span title="Ish soatlari">{trip.workHours} s</span>
+                    </td>
+                    <td>{trip.distance} km</td>
+                    <td style={{ color: "#10b981", fontWeight: "600" }}>{trip.fuelNorm.toFixed(1)}</td>
+                    <td>
+                      <Link href={`/trips/${trip.id}/edit`} className={styles.editBtn}>
+                        ✏️
+                      </Link>
+                      <DeleteTripButton tripId={trip.id} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
